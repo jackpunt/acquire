@@ -62,6 +62,7 @@
               "buildTarget": "acquire:build:production"
             },
             "development": {
+              "port": 4209,
               "buildTarget": "acquire:build:development"
             }
           },
