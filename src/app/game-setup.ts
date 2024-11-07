@@ -2,14 +2,13 @@ import { Params } from "@angular/router";
 import { stime, Random } from "@thegraid/common-lib";
 import { ParamGUI } from "@thegraid/easeljs-lib";
 import { GameSetup as GameSetupLib, MapCont } from "@thegraid/hexlib";
-import { GamePlay, Hex2, HexMap, Player, Scenario, ScenarioParser, Table, TP } from "@thegraid/hexlib";
-// import { AfHex } from "./AfHex";
+import { GamePlay, Hex2, HexMap, Player, Scenario, ScenarioParser, Table, } from "@thegraid/hexlib";
 // import { GamePlay } from "./game-play";
 // import { MktHex2 as Hex2, HexMap } from "./hex";
 // import { Player } from "./player";
 // import { ScenarioParser } from "./scenario-parser";
 // import { Table } from "./table";
-// import { TP } from "./table-params";
+import { TP } from "./table-params";
 
 /** show " R" for " N" */
 stime.anno = (obj: string | { constructor: { name: string; }; }) => {
