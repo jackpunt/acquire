@@ -4,7 +4,7 @@ import { stime } from '@thegraid/common-lib';
 import { } from 'wicg-file-system-access';
 import { Title } from '@angular/platform-browser';
 import { AppComponent } from '../app.component';
-// import { GameSetup } from '../game-setup';
+import { GameSetup } from '../game-setup';
 
 @Component({
     selector: 'stage-comp',
@@ -49,8 +49,8 @@ export class StageComponent implements OnInit {
   ngAfterViewInit2() {
     let href: string = document.location.href;
     console.log(stime(this, ".ngAfterViewInit---"), href, "qParams=", this.qParams)
-    // const gs = new GameSetup(this.mapCanvasId, this.qParams);    // load images; new GamePlay(qParams);
-    // this.titleService.setTitle(`${this.app.title} ${gs.pageLabel}`)
+    const gs = new GameSetup(this.mapCanvasId, this.qParams);    // load images; new GamePlay(qParams);
+    this.titleService.setTitle(`${this.app.title} ${gs.pageLabel}`)
   }
 
   // see: stream-writer.setButton
