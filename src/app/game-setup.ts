@@ -1,10 +1,9 @@
 import { Params } from "@angular/router";
-import { stime, Random } from "@thegraid/common-lib";
+import { Random, stime } from "@thegraid/common-lib";
 import { ParamGUI } from "@thegraid/easeljs-lib";
-import { GameSetup as GameSetupLib, MapCont } from "@thegraid/hexlib";
-import { GamePlay, Hex2, HexMap, Player, Scenario, ScenarioParser, } from "@thegraid/hexlib";
+import { GamePlay, GameSetup as GameSetupLib, MapCont, Player, Scenario, ScenarioParser } from "@thegraid/hexlib";
 // import { GamePlay } from "./game-play";
-// import { MktHex2 as Hex2, HexMap } from "./hex";
+import { AcqHex2 as Hex2, HexMap } from "./hex";
 // import { Player } from "./player";
 // import { ScenarioParser } from "./scenario-parser";
 import { Table } from "./table";
@@ -93,7 +92,7 @@ export class GameSetup extends GameSetupLib {
     return initialScenario;
   }
 
-  override makeScenarioParser(hexMap: HexMap<Hex2>, gamePlay =this.gamePlay): ScenarioParser {
+  override makeScenarioParser(hexMap: HexMap, gamePlay =this.gamePlay): ScenarioParser {
     return new ScenarioParser(hexMap, gamePlay);
   }
   // override parseScenario(scenario: SetupElt): void {

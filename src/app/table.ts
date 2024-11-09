@@ -72,13 +72,13 @@ export class Table extends TableLib {
       const name = item.fieldName;
       const nh = (name === 'nHexes') ? TP.nHexes : TP.nHexes;
       // make game (and GUI) with new values:
-      const state = { name: item.value, nh, nHexes: nh }
-      gameSetup.restart(state); gameSetup.resetState; // if(restart) NOT required!?
+      const state = { nh } as { nh?: number, dbp?: number, offP?: boolean }; // Scenario | HexAspect
+      gameSetup.restart(state); // override GameSetup.resetState(state)
       return;
     }
 
     gui.makeParamSpec('hexRad', [30, 60, 90, 120], { fontColor: 'red' })
-    gui.makeParamSpec('nHexes', [6, 7, 8, 9], { fontColor: 'red' })
+    gui.makeParamSpec('nHexes', [5, 6, 7, 8], { fontColor: 'red' })
     gui.spec("hexRad").onChange = setStateValue; TP.hexRad;
     gui.spec("nHexes").onChange = setStateValue; TP.nHexes;
 
