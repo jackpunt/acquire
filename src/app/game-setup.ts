@@ -1,10 +1,10 @@
 import { Params } from "@angular/router";
 import { Random, stime } from "@thegraid/common-lib";
 import { ParamGUI } from "@thegraid/easeljs-lib";
-import { GamePlay, GameSetup as GameSetupLib, MapCont, Player, Scenario, ScenarioParser } from "@thegraid/hexlib";
+import { GamePlay, GameSetup as GameSetupLib, MapCont, Scenario, ScenarioParser } from "@thegraid/hexlib";
 // import { GamePlay } from "./game-play";
 import { AcqHex2 as Hex2, HexMap } from "./hex";
-// import { Player } from "./player";
+import { AcqPlayer as Player } from "./acq-player";
 // import { ScenarioParser } from "./scenario-parser";
 import { Table } from "./table";
 import { TP } from "./table-params";
@@ -52,6 +52,7 @@ export class GameSetup extends GameSetupLib {
     rfn.value = file ?? 'setup@0';
 
     super.initialize(canvasId);
+    this.stage.tickEnabled = false;
     return;
   }
 

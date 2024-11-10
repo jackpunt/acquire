@@ -1,9 +1,11 @@
-import type { XY, XYWH } from "@thegraid/common-lib";
+import { permute, type XY, type XYWH } from "@thegraid/common-lib";
 import type { ParamItem, ScaleableContainer } from "@thegraid/easeljs-lib";
-import { NamedContainer, ParamGUI } from "@thegraid/easeljs-lib";
+import { ParamGUI } from "@thegraid/easeljs-lib";
 import type { Container, Stage } from "@thegraid/easeljs-module";
-import { IdHex, Scenario, Table as TableLib, Tile, type HexAspect } from "@thegraid/hexlib";
-import { GamePlay } from "@thegraid/hexlib";
+import { GamePlay, IdHex, Scenario, Table as TableLib, Tile } from "@thegraid/hexlib";
+import { AcqPlayer } from "./acq-player";
+import { AcqTile } from "./acq-tile";
+import type { AcqHex2 } from "./hex";
 import { TP } from "./table-params";
 
 
@@ -34,8 +36,36 @@ export class Table extends TableLib {
 
   override layoutTable2() {
     this.initialVis = true;
-    super.layoutTable2()
+    super.layoutTable2();
+    const drawHex = this.newHex2(1, 1, 'drawHex') as AcqHex2;
+    drawHex.distText.y = 0;
+    // drawHex.cont.visible = false;
+    permute(AcqTile.allTiles);
+    AcqTile.makeSource(drawHex, AcqTile.allTiles);
+    this.addDoneButton();
     return;
+  }
+
+  /**
+   * last action of curPlayer is to draw their next tile.
+   */
+  override addDoneButton() {
+    const rv = super.addDoneButton(undefined, 0, 50); // table.doneButton('Done')
+    this.doneClick0 = this.doneClicked;
+    this.doneClicked = (ev) => {
+      this.playerDone(ev);
+    };
+    this.doneButton.activate(true)
+    return rv;
+  }
+  doneClick0 = this.doneClicked;
+  playerDone(evt: any) {
+    const gp = GamePlay;
+    const gamePlay = this.gamePlay;
+    const curPlayer = gamePlay.curPlayer as AcqPlayer;
+    const tile = AcqTile.source.takeUnit();
+    curPlayer.newTile(tile);
+    this.doneClick0(evt);
   }
 
   override layoutTurnlog(rowy = 8, colx?: number): void {

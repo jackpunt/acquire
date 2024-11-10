@@ -1,5 +1,6 @@
 import { H, Hex1 as Hex1Lib, Hex2 as Hex2Lib, Hex2Mixin, HexDir, Hex as HexLib, HexM, HexMap as HexMapLib, HexM as HexMLib } from "@thegraid/hexlib";
 import { TP } from "./table-params";
+import { AcqTile } from "./acq-tile";
 
 /** Base Hex, has no connection to graphics.
  *
@@ -23,7 +24,10 @@ export class AcqHex2 extends AcqHex2Lib {
     // Hex2Impl.consCode() == override AcqHex2.consCode() { super.consCode() == Hex2Imp.consCode(); ... }
     super(map, row, col, name);
   }
-
+  override showText(vis = !this.rcText.visible) {
+    this.rcText.visible = vis;
+    this.cont.updateCache();
+  }
   // Mixin idiom compiles type 'this' into type 'any'; so must redeclare proper signatures:
   // because: new(...args: any[]) {...} is not a class, has no instances, so no 'this' value/type.
 
@@ -64,24 +68,28 @@ export class HexMap extends HexMapLib<AcqHex> implements HexM<HexLib> {
   override makeAllDistricts(nh?: number, mh?: number): AcqHex[] {
     const hexAry = super.makeAllDistricts(nh, mh)
     this.labelHexes()
+    const allTiles = AcqTile.allTiles; // to view in debugger
     return hexAry
   }
   labelHexes() {
-    const sectors = ['NE', 'SE', 'S', 'SW', 'NW', 'N', ]; // c/EN/NE, etc
+    const sectors = ['C', 'D', 'E', 'F', 'G', 'B', ]; // c/EN/NE, etc
     const ch = this.centerHex as AcqHex2;
     const cw = (radial:number) => sectors[radial]; // clockwise(NE)=>N
     const setText = (hex: AcqHex2, text: string) => {
       hex.distText.y = 0
       hex.distText.text = text;
       hex.distText.color = 'WHITE';
-      hex.showText(true)
+      hex.showText(true);
+      new AcqTile(text);
     }
+    setText(ch, 'A-0');
+    AcqTile.allTiles.length = 0;
+
     // [NE, E, SE, SW, W, NW]
     H.ewDirs.forEach((dir, n) => {
       const d2 = H.ewDirs[(n + 2) % 6]; // NW -> E
       const sn = cw(n); // sector name
       const sn0 = dir;
-      setText(ch, '0');
       // For each of the hex0 on the 6 central axies:
       ch.hexesInDir(dir).forEach((hex0, dr) => {
         const label = `${sn}-${dr + 1}`;
