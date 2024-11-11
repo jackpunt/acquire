@@ -41,7 +41,7 @@ export class Table extends TableLib {
     drawHex.distText.y = 0;
     // drawHex.cont.visible = false;
     permute(AcqTile.allTiles);
-    AcqTile.makeSource(drawHex, AcqTile.allTiles);
+    AcqTile.makeSource(drawHex);
     this.addDoneButton();
     return;
   }
@@ -63,8 +63,7 @@ export class Table extends TableLib {
     const gp = GamePlay;
     const gamePlay = this.gamePlay;
     const curPlayer = gamePlay.curPlayer as AcqPlayer;
-    const tile = AcqTile.source.takeUnit();
-    curPlayer.newTile(tile);
+    curPlayer.drawTile();
     this.doneClick0(evt);
   }
 

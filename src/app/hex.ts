@@ -1,6 +1,6 @@
 import { H, Hex1 as Hex1Lib, Hex2 as Hex2Lib, Hex2Mixin, HexDir, Hex as HexLib, HexM, HexMap as HexMapLib, HexM as HexMLib } from "@thegraid/hexlib";
-import { TP } from "./table-params";
 import { AcqTile } from "./acq-tile";
+import { TP } from "./table-params";
 
 /** Base Hex, has no connection to graphics.
  *
@@ -55,9 +55,9 @@ export class AcqHex2 extends AcqHex2Lib {
 
   override constructorCode(map: HexMLib<Hex2Lib>, row: number, col: number, name?: string) {
     super.constructorCode(map, row, col, name);        // Hex2Impl.constructorCode()
-    if (row === undefined || col === undefined) return // nextHex? recycleHex?
   }
-  override setRcText(row: number, col: number, rcf = 14 * TP.hexRad/60) {
+
+  override setRcText(row: number, col: number, rcf = 14 * TP.hexRad / 60,) {
     super.setRcText(row, col, rcf)
     const rct = this.rcText
     rct.y -= rcf * 2; // raise it up more
@@ -65,14 +65,9 @@ export class AcqHex2 extends AcqHex2Lib {
 }
 
 export class HexMap extends HexMapLib<AcqHex> implements HexM<HexLib> {
-  override makeAllDistricts(nh?: number, mh?: number): AcqHex[] {
-    const hexAry = super.makeAllDistricts(nh, mh)
-    this.labelHexes()
-    const allTiles = AcqTile.allTiles; // to view in debugger
-    return hexAry
-  }
-  labelHexes() {
-    const sectors = ['C', 'D', 'E', 'F', 'G', 'B', ]; // c/EN/NE, etc
+
+  labelHexesAndMakeTiles() {
+    const sectors = ['C', 'D', 'E', 'F', 'G', 'B', ]; // name each sector
     const ch = this.centerHex as AcqHex2;
     const cw = (radial:number) => sectors[radial]; // clockwise(NE)=>N
     const setText = (hex: AcqHex2, text: string) => {
@@ -80,16 +75,17 @@ export class HexMap extends HexMapLib<AcqHex> implements HexM<HexLib> {
       hex.distText.text = text;
       hex.distText.color = 'WHITE';
       hex.showText(true);
-      new AcqTile(text);
+      new AcqTile(text);    // make AcqTile to match each Hex
     }
-    setText(ch, 'A-0');
+
     AcqTile.allTiles.length = 0;
+    setText(ch, 'A-0');
 
     // [NE, E, SE, SW, W, NW]
-    H.ewDirs.forEach((dir, n) => {
-      const d2 = H.ewDirs[(n + 2) % 6]; // NW -> E
+    const dirs = TP.useEwTopo ? H.ewDirs : H.nsDirs;
+    dirs.forEach((dir, n) => {
+      const d2 = dirs[(n + 2) % 6]; // NW -> E
       const sn = cw(n); // sector name
-      const sn0 = dir;
       // For each of the hex0 on the 6 central axies:
       ch.hexesInDir(dir).forEach((hex0, dr) => {
         const label = `${sn}-${dr + 1}`;

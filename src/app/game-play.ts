@@ -1,5 +1,5 @@
 import { KeyBinder } from "@thegraid/easeljs-lib";
-import { GamePlay as GamePlayLib, GameSetup, GameState, Player as PlayerLib } from "@thegraid/hexlib";
+import { GamePlay as GamePlayLib, GameSetup, GameState, Player as PlayerLib, type Scenario } from "@thegraid/hexlib";
 import { AcqPlayer as Player } from "./acq-player";
 // import { GameState } from "./game-state";
 import { stime } from "@thegraid/common-lib";
@@ -20,6 +20,11 @@ export class GamePlay extends GamePlayLib {
 
   override readonly gameState: GameState = new GameState(this); // {play, buy, discard, draw}
   override get allPlayers() { return Player.allPlayers; };
+
+  constructor(gameSetup: GameSetup, scenario: Scenario) {
+    super(gameSetup, scenario)
+    this.hexMap.labelHexesAndMakeTiles(); // after Tile.gamePlay = this;
+  }
 
   // Args to f are local Player, not PlayerLib
   override forEachPlayer(f: (p: Player, index: number, players: Player[]) => void): void {
