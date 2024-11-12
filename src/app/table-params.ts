@@ -22,7 +22,7 @@ export class TP extends TPLib {
   static schemeNames = ['Red_Blue']
 
 
-  static override bgColor: string = 'tan' //'wheat'// C.BROWN
+  static override bgColor: string = 'rgb(190,160,120)'; //tan = 'rgb(210,180,140)' //'sienna'//'wheat'// C.BROWN
   static borderColor: string = 'peru'//TP.bgColor; //'burlywood'
   static override meepleY0 = 0;
 

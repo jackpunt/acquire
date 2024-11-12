@@ -31,13 +31,13 @@ export class CorpMgr {
   // big2 = { 2: 400, 3: 500, 4: 600, 5: 700, '6-10': 800, '11-20': 900, '21-30': 1000, '31-40': 1100, 41: 1200 };
 
   corpSpecs = [
-    { name: 'Sackson', color: 'red', rank: 0 },
-    { name: 'Zeta', color: 'yellow', rank: 0 },
-    { name: 'America', color: 'blue', rank: 1 },
+    { name: 'Sackson', color: 'Crimson', rank: 0 },
+    { name: 'Zeta', color: 'gold', rank: 0 },
+    { name: 'America', color: 'MediumBlue', rank: 1 },
     { name: 'Fusion', color: 'green', rank: 1 },
-    { name: 'Hydra', color: 'tan', rank: 1 },
+    { name: 'Hydra', color: 'DarkOrange', rank: 1 },
     { name: 'Phoenix', color: 'purple', rank: 2 },
-    { name: 'Quantum', color: 'teal', rank: 2 },
+    { name: 'Quantum', color: 'DarkCyan', rank: 2 },
   ]
 
   /** return [single] Hexes joining new Corp */

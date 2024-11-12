@@ -70,7 +70,17 @@ export class GamePlay extends GamePlayLib {
     ; (document.getElementById('readFileName') as HTMLTextAreaElement).value = logAt;
   }
 
+  setStartingTiles() {
+    this.allPlayers.map(plyr => {
+      const hexes = this.hexMap.hexAry;
+      const tile = Tile.source.takeUnit()
+      const legalHex = hexes.find(hex => tile.isLegalTarget(hex as AcqHex2))
+      tile.moveTo(legalHex);
+    })
+  }
+
   override setNextPlayer(turnNumber?: number): void {
+    if (turnNumber === 0) this.setStartingTiles()
     super.setNextPlayer(turnNumber);
   }
 
