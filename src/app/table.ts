@@ -2,9 +2,10 @@ import { permute, type XY, type XYWH } from "@thegraid/common-lib";
 import type { ParamItem, ScaleableContainer } from "@thegraid/easeljs-lib";
 import { ParamGUI } from "@thegraid/easeljs-lib";
 import type { Container, Stage } from "@thegraid/easeljs-module";
-import { GamePlay, IdHex, Scenario, Table as TableLib, Tile } from "@thegraid/hexlib";
-import { AcqPlayer } from "./acq-player";
+import { IdHex, Scenario, Table as TableLib, Tile } from "@thegraid/hexlib";
+import { AcqPlayer as Player } from "./acq-player";
 import { AcqTile } from "./acq-tile";
+import type { GamePlay } from "./game-play";
 import type { AcqHex2 } from "./hex";
 import { TP } from "./table-params";
 
@@ -19,6 +20,7 @@ class TablePlanner {
  */
 export class Table extends TableLib {
   // override hexMap: HexMap & HexMapLib<IHex2>;
+  declare gamePlay: GamePlay;
 
   constructor(stage: Stage) {
     super(stage);
@@ -29,7 +31,9 @@ export class Table extends TableLib {
     const v = super.toggleText(vis)
     return v;
   }
-
+  override bgXYWH(x0 = -1, y0 = .5, w0 = 6 + TP.nHexes, h0 = 1, dw = 0, dh = 0) {
+    return super.bgXYWH(x0, y0, w0, h0, dw, dh)
+  }
   override layoutTable(gamePlay: GamePlay): void {
       super.layoutTable(gamePlay);
   }
@@ -37,7 +41,8 @@ export class Table extends TableLib {
   override layoutTable2() {
     this.initialVis = true;
     super.layoutTable2();
-    const drawHex = this.newHex2(1, 1, 'drawHex') as AcqHex2;
+    const drawCol = TP.nHexes + Math.ceil(TP.nHexes / 2) + 1;
+    const drawHex = this.newHex2(1, drawCol, 'drawHex') as AcqHex2;
     drawHex.distText.y = 0;
     // drawHex.cont.visible = false;
     permute(AcqTile.allTiles);
@@ -60,36 +65,40 @@ export class Table extends TableLib {
   }
   doneClick0 = this.doneClicked;
   playerDone(evt: any) {
-    const gp = GamePlay;
-    const gamePlay = this.gamePlay;
-    const curPlayer = gamePlay.curPlayer as AcqPlayer;
-    curPlayer.drawTile();
+    this.gamePlay.playerDone();
     this.doneClick0(evt);
   }
 
   override layoutTurnlog(rowy = 8, colx?: number): void {
     super.layoutTurnlog(rowy, colx);
   }
+  override get panelWidth() { return 6.25; }
 
   override panelLocsForNp(np: number): number[] {
-    return [[], [0], [0, 2], [0, 1, 2], [0, 3, 4, 1], [0, 3, 4, 2, 1], [0, 3, 4, 5, 2, 1]][np];
+    return [[], [0], [0, 2], [0, 1, 2], [0, 3, 5, 2], [0, 3, 4, 2, 1], [0, 3, 4, 5, 2, 1]][np];
+  }
+
+  override makePlayerPanel(table: Table, player: Player, high: number, wide: number, row: number, col: number, dir = -1) {
+    col += dir * .9;
+    return super.makePlayerPanel(table, player, high, wide, row, col, dir = -1)
   }
 
   override bindKeysToScale(scaleC: ScaleableContainer, ...views: XY[]): void {
     this.viewA.x = 442;
-    const viewZ = { x: 240, y: -25, ssk: 'Z', isk: 'z', scale: 1.65 } // testing: 240->420, .65->1.65
-    const viewX = { x: 240, y: -25, ssk: 'X', isk: 'x', scale: .8 }
+    const viewZ = { x: 250, y: -25, ssk: 'Z', isk: 'z', scale: 1.40 } // testing: 240->420, .65->1.65
+    const viewX = { x: 250, y: -25, ssk: 'X', isk: 'x', scale: .8 }
     super.bindKeysToScale(scaleC, viewX, this.viewA, viewZ); // KeyBinder.keyBinder.setKey('z')
   }
 
   override makeGUIs(scale = TP.hexRad / 60, cx = -80, cy = 170, dy = 20) {
     super.makeGUIs(scale, cx, cy, dy);
   }
-  override setupUndoButtons(xOffs: number, bSize: number, skipRad: number, bgr: XYWH, row = 8, col = -6): void {
-    super.setupUndoButtons(xOffs, bSize, skipRad, bgr, row, col)
+  override setupUndoButtons(bgr: XYWH, row = 8, col = -7, undo?: boolean, xOffs?: number, bSize?: number, skipRad?: number ): void {
+    super.setupUndoButtons(bgr, row, col, undo, xOffs, bSize, skipRad, )
   }
 
   override makeParamGUI(parent: Container, x = 0, y = 0): ParamGUI {
+    const tp = TP, tpLib = TP; // for LogMessage or debugger
     const gui = new ParamGUI(TP, { textAlign: 'right' });
     gui['Aname'] = gui.name = 'ParamGUI';
 
@@ -108,8 +117,10 @@ export class Table extends TableLib {
 
     gui.makeParamSpec('hexRad', [30, 60, 90, 120], { fontColor: 'red' })
     gui.makeParamSpec('nHexes', [5, 6, 7, 8], { fontColor: 'red' })
+    gui.makeParamSpec('numPlayers', [2, 3, 4, 5, 6], { fontColor: 'green' })
     gui.spec("hexRad").onChange = setStateValue; TP.hexRad;
     gui.spec("nHexes").onChange = setStateValue; TP.nHexes;
+    gui.spec("numPlayers").onChange = setStateValue; TP.numPlayers;
 
     parent.addChild(gui)
     gui.x = x; gui.y = y;
@@ -132,8 +143,6 @@ export class Table extends TableLib {
   /**
    * All manual moves feed through this (drop & redo)
    * TablePlanner.logMove(); then dispatchEvent() --> gamePlay.doPlayerMove()
-   *
-   * New: let Ship (Drag & Drop) do this.
    */
   override doTableMove(ihex: IdHex) {
     super.doTableMove(ihex); // no-op
@@ -141,9 +150,6 @@ export class Table extends TableLib {
   /** All moves (GUI & player) feed through this: */
   override moveTileToHex(tile: Tile, ihex: IdHex) {
     super.moveTileToHex(tile, ihex); // no-op
-    // let hex = Hex.ofMap(ihex, this.hexMap)
-    // this.hexMap.showMark(hex)
-    // this.dispatchEvent(new HexEvent(S.add, hex, sc)) // -> GamePlay.playerMoveEvent(hex, sc)
   }
 
   override reCacheTiles() {

@@ -15,6 +15,7 @@ export class AcqHex2Lib extends Hex2Mixin(AcqHex) { }
 
 /** One Hex cell in the game, shown as a polyStar Shape */
 export class AcqHex2 extends AcqHex2Lib {
+  declare tile: AcqTile;
   isAcqHex2 = true;
   /** Hex2 cell with graphics; shown as a polyStar Shape of radius @ (XY=0,0) */
   constructor(map: HexMLib<HexLib>, row: number, col: number, name?: string) {
@@ -98,7 +99,4 @@ export class HexMap extends HexMapLib<AcqHex> implements HexM<HexLib> {
     })
   }
 }
-/** Marker class for HexMap used by GamePlayD */
-export class HexMapD extends HexMap {
 
-}

@@ -1,43 +1,31 @@
 import { stime } from "@thegraid/common-lib";
 import { Player } from "@thegraid/hexlib";
-import { AcqTile } from "./acq-tile";
-import { AcqHex2 } from "./hex";
+import { AcqTile as Tile } from "./acq-tile";
+import type { Corp } from "./corp";
+import { GamePlay } from "./game-play";
+import { AcqHex2 as Hex } from "./hex";
+import { TP } from "./table-params";
 
 export class AcqPlayer extends Player {
   declare static allPlayers: AcqPlayer[];
+  declare gamePlay: GamePlay;
 
   get acqTiles() {
-    return this.tileRack.map(hex => hex.tile as AcqTile)
+    return this.tileRack.map(hex => hex.tile as Tile)
   }
 
   /** TODO: stash tile on Player's panel, in empty hex. */
   drawTile() {
-    const rack = this.tileRack.find(hex => !hex.tile) as AcqHex2;
+    const rack = this.tileRack.find(hex => !hex.tile) as Hex;
     if (!rack) return;
-    const tile = AcqTile.source.takeUnit();
-    tile.placeTile(rack);
+    const tile = Tile.source.takeUnit();
+    tile?.placeTile(rack);
     console.log(stime(this, `.newTile: ${this.Aname}`), this.acqTiles.map(t => t?.Aname), this.acqTiles)
+    return !!tile;
   }
 
-  /**
-   *
-   * @param 2 <= n <= 41;
-   * @param size 0, 1, 2;
-   * @returns
-   */
-  price(n: number, size: number) {
-    const nd = Math.floor((n + 59) / 10); // nd: 6, 7, 8, 9, 10
-    const nn = (n < 6 ? n : nd);
-    return (size + nn) * 100;
-  }
-  /** red(Sackson), yellow(Zeta) */
-  smal2 = {2: 200, 3: 300, 4: 400, 5: 500, '6-10': 600, '11-20': 700, '21-30': 800, '31-40': 900, 41: 1000 };
-  /** blue(America), green(Fusion), tan(Hydra) */
-  mid3 = {2: 300, 3: 400, 4: 500, 5: 600, '6-10': 700, '11-20': 800, '21-30': 800, '31-40': 1000, 41: 1100 };
-  /** purple(Phoenix), teal(Quantum) */
-  big2 = {2: 400, 3: 500, 4: 600, 5: 700, '6-10': 800, '11-20': 900, '21-30': 1000, '31-40': 1100, 41: 1200 };
 
-  readonly tileRack: AcqHex2[] = [];
+  readonly tileRack: Hex[] = [];
   /**
    * 6 tiles, $coins, Certs for up to 7 companies.
    *
@@ -45,17 +33,27 @@ export class AcqPlayer extends Player {
    * max 25 Certs per corp.
    */
   override makePlayerBits(): void {
+    this.makeTileRack();
+  }
+
+  makeTileRack() {
     this.tileRack.length = 0;
     const panel = this.panel, map = this.gamePlay.hexMap;
     const xy = map.mapCont.hexCont.localToLocal(0, 0, panel); // offset from hexCont to panel
     for (let i = 0; i < 6; i++) {
-      const hex = new AcqHex2(map, 2, i, `H${i}`) // not on map!
+      const hex = new Hex(map, .75, i, `H${i}`) // not on map!
       hex.cont.visible = false;
       this.tileRack.push(hex);
-      hex.cont.x -= xy.x
-      hex.cont.y -= xy.y;
+      hex.cont.x += (-xy.x + TP.hexRad);
+      hex.cont.y += (-xy.y + 0);
       hex.legalMark.setOnHex(hex)
       // panel.addChild(hex.cont)
     }
+  }
+
+  /** pick new Corp from available; or surviver of merge */
+  chooseCorp(corps: Corp[]) {
+    // TODO: GUI
+    return corps[0]; // the 'oldest' Corp
   }
 }

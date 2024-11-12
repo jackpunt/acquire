@@ -11,7 +11,7 @@ export class TP extends TPLib {
     return rv;
   }
   static override useEwTopo = true;
-  static override maxPlayers = 3;
+  static override maxPlayers = 6;
   static override numPlayers = 2;
   static override cacheTiles = 0; // scale for cache (0 -> do not cache)
 

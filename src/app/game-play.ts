@@ -3,7 +3,9 @@ import { GamePlay as GamePlayLib, GameSetup, GameState, Player as PlayerLib, typ
 import { AcqPlayer as Player } from "./acq-player";
 // import { GameState } from "./game-state";
 import { stime } from "@thegraid/common-lib";
-import { HexMap } from "./hex";
+import { AcqTile as Tile } from "./acq-tile";
+import { CorpMgr } from "./corp";
+import { AcqHex as Hex, HexMap, type AcqHex2 } from "./hex";
 import { Table } from "./table";
 import { TP } from "./table-params";
 
@@ -24,6 +26,37 @@ export class GamePlay extends GamePlayLib {
   constructor(gameSetup: GameSetup, scenario: Scenario) {
     super(gameSetup, scenario)
     this.hexMap.labelHexesAndMakeTiles(); // after Tile.gamePlay = this;
+    this.corpMgr.makeAllCorps();
+  }
+
+  corpMgr: CorpMgr = new CorpMgr();
+
+  override startTurn(): void {
+    this.forEachPlayer(plyr => {
+      plyr.tileRack.forEach(hex => {
+        hex.tile?.markCorp(this.corpMgr, this.hexMap.hexAry as AcqHex2[])
+      })
+    })
+  }
+
+  override doPlayerMove(hex: Hex, tile: Tile): void {
+    // check for corp -> paint
+    hex.isOnMap && tile.corpCircle.paint(tile.transp);
+    if (this.turnNumber > 0)
+      this.corpMgr.addHex(hex, this.curPlayer);
+  }
+
+  // from table.doneButton clicked, or programatically
+  playerDone() {
+    const plyr = this.curPlayer;
+    plyr.tileRack.forEach(hex => {
+      if (hex.tile?.corpCircle.colorn === 'pink') {
+        hex.tile.moveTo(undefined); // remove from game.
+      }
+    })
+    while (plyr.tileRack.find(hex => !hex.tile) && plyr.drawTile()) {
+    }
+
   }
 
   // Args to f are local Player, not PlayerLib

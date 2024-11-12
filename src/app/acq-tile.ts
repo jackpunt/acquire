@@ -1,7 +1,9 @@
 import { C, F } from "@thegraid/common-lib";
-import type { Paintable } from "@thegraid/easeljs-lib";
+import { CircleShape, type Paintable } from "@thegraid/easeljs-lib";
 import { HexShape, Tile, TileSource, type DragContext, type IHex2, type Table } from "@thegraid/hexlib";
 import { AcqPlayer as Player, type AcqPlayer } from "./acq-player";
+import type { CorpMgr } from "./corp";
+import type { GamePlay } from "./game-play";
 import { AcqHex2 as Hex2, type AcqHex2 } from "./hex";
 export class AcqTile extends Tile {
   declare static allTiles: AcqTile[];
@@ -18,11 +20,17 @@ export class AcqTile extends Tile {
   }
 
   declare fromHex: AcqHex2
+  declare gamePlay: GamePlay;
 
   constructor(Aname: string, player?: Player) {
     super(Aname, player);
+    this.corpCircle.y = this.radius / 2;
+    this.addChild(this.corpCircle)
     this.paint(C.BLACK);
   }
+
+  transp = 'rgba(0,0,0,0)'
+  corpCircle = new CircleShape(this.transp, this.radius / 5, '')
 
   override makeShape(): Paintable {
     return new HexShape()
@@ -40,12 +48,6 @@ export class AcqTile extends Tile {
     super.textVis(true); // always show tile name
   }
 
-  override markLegal(table: Table, setLegal = (hex: IHex2) => { hex.isLegal = false; }, ctx: DragContext = table.dragContext) {
-    const allPlayers = Player.allPlayers;
-    allPlayers.forEach(plyr => plyr.tileRack.forEach(setLegal))
-    table.hexMap.forEachHex(setLegal);
-  }
-
   /** true if this.hex is in curPlayer.tileRack AND toHex, if given, is ALSO in tileRack. */
   onRack(toHex?: Hex2): false | [number, number] {
     const player = this.gamePlay.curPlayer as AcqPlayer;
@@ -54,15 +56,40 @@ export class AcqTile extends Tile {
     return onRack && [rack.indexOf(this.fromHex), toHex ? rack.indexOf(toHex) : 0];
   }
 
+  override markLegal(table: Table, setLegal = (hex: IHex2) => { hex.isLegal = false; }, ctx: DragContext = table.dragContext) {
+    const allPlayers = Player.allPlayers;
+    allPlayers.forEach(plyr => plyr.tileRack.forEach(setLegal))
+    table.hexMap.forEachHex(setLegal);
+  }
+
+  // todo: check for joining 2 'safe' Corps.
   override isLegalTarget(toHex: Hex2, ctx?: DragContext): boolean {
     const toMap = (this.Aname == toHex.distText.text);
     const xMap = toMap && ((this.hex?.isOnMap && ctx?.lastShift) ?? false); // allow reposition
+    const canAdd = toMap && (!toHex.tile) && this.gamePlay.corpMgr.canAdd(toHex);
     const onRack = !!this.onRack(toHex);
-    return toMap || onRack || xMap;
+    return canAdd || onRack || xMap;
   }
   override cantBeMovedBy(player: AcqPlayer, ctx: DragContext): string | boolean | undefined {
     return (ctx?.lastShift || player.tileRack.includes(this.fromHex) || this.player === player) ? undefined : 'Not your Tile';
   }
+
+  markCorp(mgr: CorpMgr, hexAry: AcqHex2[]) {
+    let color = this.transp, white = C.WHITE;
+    const hexes = hexAry.filter(toHex => this.isLegalTarget(toHex))
+    if (hexes.length == 0) color = 'pink';
+    const corps = mgr.allCorps.filter(corp => hexes.find(hex => corp.moats.has(hex)))
+    if (corps.length > 1) {
+      color = white;
+    } else {
+      if (corps.length == 1) color = corps[0].color;
+      const inNew = hexes.find(hex => mgr.inNewCorp(hex).length > 0 && !corps.find(corp => corp.moats.has(hex)));
+      if (inNew) color = white;
+    }
+    this.corpCircle.paint(color);
+    return color;
+  }
+
   slideRack(targetHex: Hex2) {
     const onRack = this.onRack(targetHex)
     if (!!onRack && !!targetHex.occupied) {
@@ -88,8 +115,10 @@ export class AcqTile extends Tile {
       })
     }
   }
+
   override dropFunc(targetHex: IHex2, ctx: DragContext): void {
     this.slideRack(targetHex as Hex2);
     super.dropFunc(targetHex, ctx);
+    this.gamePlay.doPlayerMove(targetHex, this);
   }
 }
