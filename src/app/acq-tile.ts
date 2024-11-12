@@ -1,10 +1,11 @@
 import { C, F } from "@thegraid/common-lib";
-import { CircleShape, type Paintable } from "@thegraid/easeljs-lib";
+import { CenterText, CircleShape, type Paintable } from "@thegraid/easeljs-lib";
 import { HexShape, Tile, TileSource, type DragContext, type IHex2, type Table } from "@thegraid/hexlib";
 import { AcqPlayer as Player, type AcqPlayer } from "./acq-player";
-import type { CorpMgr } from "./corp";
+import type { Corp, CorpMgr } from "./corp";
 import type { GamePlay } from "./game-play";
 import { AcqHex2 as Hex2, type AcqHex2 } from "./hex";
+import { TP } from "./table-params";
 export class AcqTile extends Tile {
   declare static allTiles: AcqTile[];
 
@@ -25,12 +26,26 @@ export class AcqTile extends Tile {
   constructor(Aname: string, player?: Player) {
     super(Aname, player);
     this.corpCircle.y = this.radius / 2;
-    this.addChild(this.corpCircle)
+    this.addChild(this.corpCircle);
+    this.sizeText.y = this.radius / 2;
+    this.addChild(this.sizeText);
     this.paint(C.BLACK);
   }
 
   transp = 'rgba(0,0,0,0)'
-  corpCircle = new CircleShape(this.transp, this.radius / 5, '')
+  corpCircle = new CircleShape(this.transp, this.radius * .22, '');
+  sizeText = new CenterText('', TP.hexRad * .2, 'WHITE');
+  corp?: Corp;
+  setCorp(corp: Corp) {
+    this.corp = corp;
+  }
+  showSize() {
+    if (this.corp) {
+      this.sizeText.text = `${this.corp.size}`;
+      if (this.corp.size == 10) this.corpCircle.paint(C.grey);
+      if (this.corp.size >= 11) this.corpCircle.paint(C.BLACK);
+    }
+  }
 
   override makeShape(): Paintable {
     return new HexShape()

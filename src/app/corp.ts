@@ -86,9 +86,10 @@ export class CorpMgr {
     }
     corp?.add(hex);
     corp?.calcMoat();
-    if (corp.size >= 11) {
-      corp.hexes.forEach(hex => (hex.tile as AcqTile).corpCircle.paint(C.BLACK));
-    }
+    corp?.hexes.forEach(hex => {
+      const tile = hex.tile as AcqTile;
+      tile.showSize();
+    })
     return corp;
   }
 }
@@ -128,7 +129,10 @@ export class Corp {
   }
   add(hex: Hex) {
     this.hexes.add(hex);
-    hex.tile?.paint(this.color);
+    const tile = hex.tile as AcqTile;
+    tile?.setCorp(this);
+    tile?.showSize();
+    tile?.paint(this.color);
   }
   has(hex: Hex) {
     this.hexes.has(hex);
