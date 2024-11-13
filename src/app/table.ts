@@ -72,7 +72,7 @@ export class Table extends TableLib {
   override layoutTurnlog(rowy = 8, colx?: number): void {
     super.layoutTurnlog(rowy, colx);
   }
-  override get panelWidth() { return 6.25; }
+  override get panelWidth() { return TP.useEwTopo ? 6.25 : 6.4; }
 
   override panelLocsForNp(np: number): number[] {
     return [[], [0], [0, 2], [0, 1, 2], [0, 3, 5, 2], [0, 3, 4, 2, 1], [0, 3, 4, 5, 2, 1]][np];
@@ -80,7 +80,7 @@ export class Table extends TableLib {
 
   override makePlayerPanel(table: Table, player: Player, high: number, wide: number, row: number, col: number, dir = -1) {
     col += dir * .9;
-    return super.makePlayerPanel(table, player, high, wide, row, col, dir = -1)
+    return super.makePlayerPanel(table, player, high, wide, row, col, dir)
   }
 
   override bindKeysToScale(scaleC: ScaleableContainer, ...views: XY[]): void {

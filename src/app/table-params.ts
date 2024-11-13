@@ -27,4 +27,5 @@ export class TP extends TPLib {
   static override meepleY0 = 0;
 
   static initialCoins = 6000;
+  static multi = false; // multiple tile with same Aname
 }

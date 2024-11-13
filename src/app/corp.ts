@@ -22,6 +22,7 @@ export class CorpMgr {
    */
   price(n0: number, rank: number) {
     const n = Math.min(n0, 41);
+    if (n < 2) return 0;
     const nd = Math.floor((n + 59) / 10); // nd: 6, 7, 8, 9, 10
     const nn = (n < 6 ? n : nd);
     return (rank + nn) * 100;
@@ -33,10 +34,10 @@ export class CorpMgr {
   corpSpecs = [
     { name: 'Sackson', color: 'Crimson', rank: 0 },
     { name: 'Zeta', color: 'gold', rank: 0 },
-    { name: 'America', color: 'MediumBlue', rank: 1 },
+    { name: 'America', color: 'RoyalBlue', rank: 1 },
     { name: 'Fusion', color: 'green', rank: 1 },
     { name: 'Hydra', color: 'DarkOrange', rank: 1 },
-    { name: 'Phoenix', color: 'purple', rank: 2 },
+    { name: 'Phoenix', color: 'DarkOrchid', rank: 2 },
     { name: 'Quantum', color: 'DarkCyan', rank: 2 },
   ]
 
@@ -106,6 +107,35 @@ export class Corp {
   get size() { return this.hexes.size }
   get price() { return this.mgr.price(this.size, this.rank) }
   get isSafe() { return this.size >= 11 }
+  _shares = 25;
+  /** shares available */
+  get available() { return this._shares; }
+  shareMap: Map<AcqPlayer, number> = new Map();
+
+  /** shares owned by Player */
+  shares(player: AcqPlayer) {
+    return this.shareMap.get(player) ?? 0;
+  }
+  buy(player: AcqPlayer, n = 1) {
+    const max =  Math.min(n, this.available);
+    const num = Math.min(max, Math.floor(player.coins / this.price));
+    const cost = this.price * num;
+    player.coins -= cost;
+    this._shares -= num;
+    const balance = num + this.shares(player);
+    this.shareMap.set(player, balance);
+    return balance;
+   }
+
+   sell(player: AcqPlayer, n = 25) {
+    const own = this.shares(player);
+    const num = Math.max(n, own);
+    const cost = this.price * num;
+    player.coins += cost;
+    this._shares += num;
+    const balance = own - num;
+    this.shareMap.set(player, balance);
+   }
 
   calcMoat() {
     this.moats.clear();
@@ -139,5 +169,14 @@ export class Corp {
   }
   joins(hex: Hex) {
     this.moats.has(hex);
+  }
+}
+
+export class Cert {
+  constructor(public corp: Corp, public shares = 1) {
+
+  }
+  get value() {
+    return this.corp.price * this.shares;
   }
 }

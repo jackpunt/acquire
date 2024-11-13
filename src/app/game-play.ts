@@ -82,6 +82,7 @@ export class GamePlay extends GamePlayLib {
   override setNextPlayer(turnNumber?: number): void {
     if (turnNumber === 0) this.setStartingTiles()
     super.setNextPlayer(turnNumber);
+    this.forEachPlayer(p => p.updateBuyLabels())
   }
 
   /** makeMove ('m' key): advance one [lrt] Ship on its path. */

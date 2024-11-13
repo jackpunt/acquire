@@ -3,7 +3,7 @@ import { Random, stime } from "@thegraid/common-lib";
 import { ParamGUI } from "@thegraid/easeljs-lib";
 import { GameSetup as GameSetupLib, MapCont, Scenario, ScenarioParser } from "@thegraid/hexlib";
 import { GamePlay } from "./game-play";
-import { AcqHex2 as Hex2, HexMap } from "./hex";
+import { CC, AcqHex2 as Hex2, HexMap } from "./hex";
 import { AcqPlayer as Player } from "./acq-player";
 // import { ScenarioParser } from "./scenario-parser";
 import { Table } from "./table";
@@ -58,7 +58,7 @@ export class GameSetup extends GameSetupLib {
 
   /** override to inject each Player.pathCont */
   override makeHexMap() {
-    HexMap.distColor[0] = 'rgb(80,80,80)';
+    HexMap.distColor[0] = CC.grey92;
     const cNames = MapCont.cNames.concat() as string[];
     // add Container/field name for each Player's path lines:
     for (let ndx = 0; ndx < this.nPlayers; ndx++) {

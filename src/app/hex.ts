@@ -2,6 +2,13 @@ import { H, Hex1 as Hex1Lib, Hex2 as Hex2Lib, Hex2Mixin, HexDir, Hex as HexLib, 
 import { AcqTile } from "./acq-tile";
 import { TP } from "./table-params";
 
+export namespace CC {
+  export const grey128:     string = 'rgb(128,128,128)'
+  export const grey64:      string = 'rgb(64,64,64)'
+  export const grey32:      string = 'rgb(32,32,32)'
+  export const grey92:      string = 'rgb(92,92,92)'
+  export const grey224:     string = 'rgb(224,224,224)'
+}
 /** Base Hex, has no connection to graphics.
  *
  */
@@ -71,16 +78,19 @@ export class HexMap extends HexMapLib<AcqHex> implements HexM<HexLib> {
     const sectors = ['C', 'D', 'E', 'F', 'G', 'B', ]; // name each sector
     const ch = this.centerHex as AcqHex2;
     const cw = (radial:number) => sectors[radial]; // clockwise(NE)=>N
-    const setText = (hex: AcqHex2, text: string) => {
+    const setText = (hex: AcqHex2, text: string, n = 0) => {
       hex.distText.y = 0
       hex.distText.text = text;
       hex.distText.color = 'WHITE';
+      hex.hexShape.paint([CC.grey128, CC.grey92][n % 2])
       hex.showText(true);
       new AcqTile(text);    // make AcqTile to match each Hex
     }
 
     AcqTile.allTiles.length = 0;
-    setText(ch, 'A-0');
+    setText(ch, 'A-00');
+    ch.hexShape.paint('rgb(110,110,110)')
+    // ch.hexShape.paint(CC.grey32)
 
     // [NE, E, SE, SW, W, NW]
     const dirs = TP.useEwTopo ? H.ewDirs : H.nsDirs;
@@ -89,11 +99,12 @@ export class HexMap extends HexMapLib<AcqHex> implements HexM<HexLib> {
       const sn = cw(n); // sector name
       // For each of the hex0 on the 6 central axies:
       ch.hexesInDir(dir).forEach((hex0, dr) => {
-        const label = `${sn}-${dr + 1}`;
-        setText(hex0, label);
+        let label = `${sn}-${dr + 1}${0}`; // dr is the 'ring' number
+        setText(hex0, label, n);
         // extend across the triangle
-        hex0.hexesInDir(d2).slice(0, dr).forEach(hex => {
-          setText(hex, label);
+        hex0.hexesInDir(d2).slice(0, dr).forEach((hex, i) => {
+          if (!TP.multi) label = `${sn}-${dr + 1}${i+1}`;
+          setText(hex, label, n);
         })
       })
     })
