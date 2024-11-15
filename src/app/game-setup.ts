@@ -1,10 +1,10 @@
 import { Params } from "@angular/router";
 import { Random, stime } from "@thegraid/common-lib";
 import { ParamGUI } from "@thegraid/easeljs-lib";
-import { GameSetup as GameSetupLib, MapCont, Scenario, ScenarioParser } from "@thegraid/hexlib";
-import { GamePlay } from "./game-play";
-import { CC, AcqHex2 as Hex2, HexMap } from "./hex";
+import { GameSetup as GameSetupLib, Scenario, ScenarioParser } from "@thegraid/hexlib";
 import { AcqPlayer as Player } from "./acq-player";
+import { GamePlay } from "./game-play";
+import { CC, AcqHex2 as Hex2, HexMap2 } from "./hex";
 // import { ScenarioParser } from "./scenario-parser";
 import { Table } from "./table";
 import { TP } from "./table-params";
@@ -58,13 +58,8 @@ export class GameSetup extends GameSetupLib {
 
   /** override to inject each Player.pathCont */
   override makeHexMap() {
-    HexMap.distColor[0] = CC.grey92;
-    const cNames = MapCont.cNames.concat() as string[];
-    // add Container/field name for each Player's path lines:
-    for (let ndx = 0; ndx < this.nPlayers; ndx++) {
-      // cNames.push(Player.pathCName(ndx))
-    }
-    return super.makeHexMap(HexMap, Hex2, cNames);
+    HexMap2.distColor[0] = CC.grey92;
+    return super.makeHexMap(HexMap2, Hex2);
   }
 
   override makeTable(): Table {
@@ -93,7 +88,7 @@ export class GameSetup extends GameSetupLib {
     return initialScenario;
   }
 
-  override makeScenarioParser(hexMap: HexMap, gamePlay =this.gamePlay): ScenarioParser {
+  override makeScenarioParser(hexMap: HexMap2, gamePlay =this.gamePlay): ScenarioParser {
     return new ScenarioParser(hexMap, gamePlay);
   }
   // override parseScenario(scenario: SetupElt): void {

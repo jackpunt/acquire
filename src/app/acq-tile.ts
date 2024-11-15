@@ -4,7 +4,7 @@ import { HexShape, Tile, TileSource, type DragContext, type IHex2, type Table } 
 import { AcqPlayer as Player, type AcqPlayer } from "./acq-player";
 import type { Corp, CorpMgr } from "./corp";
 import type { GamePlay } from "./game-play";
-import { AcqHex2 as Hex2, type AcqHex2 } from "./hex";
+import { CC, AcqHex2 as Hex2, type HexMap2 } from "./hex";
 import { TP } from "./table-params";
 export class AcqTile extends Tile {
   declare static allTiles: AcqTile[];
@@ -20,11 +20,12 @@ export class AcqTile extends Tile {
     return source;
   }
 
-  declare fromHex: AcqHex2
+  declare fromHex: Hex2
   declare gamePlay: GamePlay;
 
-  constructor(Aname: string, player?: Player) {
-    super(Aname, player);
+  constructor(Aname: string, map: HexMap2) {
+    super(Aname, undefined);
+    this.hexes = map.hexAry.filter(hex => Aname === hex.distText.text)
     this.corpCircle.y = this.radius / 2;
     this.addChild(this.corpCircle);
     this.sizeText.y = this.radius / 2;
@@ -32,8 +33,9 @@ export class AcqTile extends Tile {
     this.paint(C.BLACK);
   }
 
-  transp = 'rgba(0,0,0,0)'
-  corpCircle = new CircleShape(this.transp, this.radius * .22, '');
+  readonly hexes: Hex2[];
+  unplayable = false;
+  corpCircle = new CircleShape(CC.transp, this.radius * .22, '');
   sizeText = new CenterText('', TP.hexRad * .2, 'WHITE');
   corp?: Corp;
   setCorp(corp: Corp) {
@@ -78,10 +80,11 @@ export class AcqTile extends Tile {
   }
 
   // todo: check for joining 2 'safe' Corps.
-  override isLegalTarget(toHex: Hex2, ctx?: DragContext): boolean {
-    const toMap = (this.Aname == toHex.distText.text);
-    const xMap = toMap && ((this.hex?.isOnMap && ctx?.lastShift) ?? false); // allow reposition
-    const canAdd = toMap && (!toHex.tile) && this.gamePlay.corpMgr.canAdd(toHex);
+  // mark unplayable hex and potential unplayabe tile
+  override isLegalTarget(toHex: Hex2, ctx?: DragContext | { tile?: AcqTile }): boolean {
+    const toMap = (this.Aname === toHex.distText.text);
+    const xMap = toMap && ((this.hex?.isOnMap && (ctx as DragContext)?.lastShift) ?? false); // allow reposition
+    const canAdd = toMap && (!toHex.tile) && this.gamePlay.corpMgr.canAdd(toHex, ctx?.tile as AcqTile, );
     const onRack = !!this.onRack(toHex);
     return canAdd || onRack || xMap;
   }
@@ -89,9 +92,9 @@ export class AcqTile extends Tile {
     return (ctx?.lastShift || player.tileRack.includes(this.fromHex) || this.player === player) ? undefined : 'Not your Tile';
   }
 
-  markCorp(mgr: CorpMgr, hexAry: AcqHex2[]) {
-    let color = this.transp, white = C.WHITE;
-    const hexes = hexAry.filter(toHex => this.isLegalTarget(toHex))
+  markCorp(mgr: CorpMgr, hexAry: Hex2[]) {
+    let color = CC.transp, white = C.WHITE;
+    const hexes = hexAry.filter(toHex => this.isLegalTarget(toHex, { tile: this }))
     if (hexes.length == 0) color = 'pink';
     const corps = mgr.allCorps.filter(corp => hexes.find(hex => corp.moats.has(hex)))
     if (corps.length > 1) {
@@ -110,8 +113,7 @@ export class AcqTile extends Tile {
     if (!!onRack && !!targetHex.occupied) {
       // if drop rack->rack; slide other tiles out of the way
       const [it, io] = onRack;
-      const player = this.gamePlay.curPlayer as AcqPlayer;
-      const rack = player.tileRack;
+      const rack = this.gamePlay.curPlayer.tileRack; // slideRack
       if (it < io) {
         for (let i = it; i < io; i++) {
           // [?, it, ?, ?, io, ?] ==> [?, ?, ?, io, it, ?]
@@ -131,7 +133,7 @@ export class AcqTile extends Tile {
     }
   }
 
-  override dropFunc(targetHex: IHex2, ctx: DragContext): void {
+  override dropFunc(targetHex: Hex2, ctx: DragContext): void {
     this.slideRack(targetHex as Hex2);
     super.dropFunc(targetHex, ctx);
     this.gamePlay.doPlayerMove(targetHex, this);

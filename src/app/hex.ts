@@ -3,6 +3,7 @@ import { AcqTile } from "./acq-tile";
 import { TP } from "./table-params";
 
 export namespace CC {
+  export const transp:      string = 'rgba(0,0,0,0)'
   export const grey128:     string = 'rgb(128,128,128)'
   export const grey64:      string = 'rgb(64,64,64)'
   export const grey32:      string = 'rgb(32,32,32)'
@@ -13,6 +14,7 @@ export namespace CC {
  *
  */
 export class AcqHex extends Hex1Lib {
+  twoSafe = false;
   // constructor(map: HexMapLib<HexLib>, row: number, col: number, name?: string) {
   //   super(map, row, col, name);
   // }
@@ -72,19 +74,19 @@ export class AcqHex2 extends AcqHex2Lib {
   }
 }
 
-export class HexMap extends HexMapLib<AcqHex> implements HexM<HexLib> {
+export class HexMap2 extends HexMapLib<AcqHex2> implements HexM<HexLib> {
 
   labelHexesAndMakeTiles() {
     const sectors = ['C', 'D', 'E', 'F', 'G', 'B', ]; // name each sector
-    const ch = this.centerHex as AcqHex2;
-    const cw = (radial:number) => sectors[radial]; // clockwise(NE)=>N
+    const ch = this.centerHex;
+    const cw = (radial: number) => sectors[radial]; // clockwise(NE)=>N
     const setText = (hex: AcqHex2, text: string, n = 0) => {
       hex.distText.y = 0
       hex.distText.text = text;
       hex.distText.color = 'WHITE';
       hex.hexShape.paint([CC.grey128, CC.grey92][n % 2])
       hex.showText(true);
-      new AcqTile(text);    // make AcqTile to match each Hex
+      new AcqTile(text, this);    // make AcqTile to match each Hex
     }
 
     AcqTile.allTiles.length = 0;

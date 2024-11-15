@@ -3,7 +3,7 @@ import { Player, type PlayerPanel } from "@thegraid/hexlib";
 import { AcqTile as Tile } from "./acq-tile";
 import { type Corp } from "./corp";
 import { GamePlay } from "./game-play";
-import { AcqHex2 as Hex } from "./hex";
+import { AcqHex2 as Hex2 } from "./hex";
 import { TP } from "./table-params";
 function nf(n: number) { return `${n !== undefined ? (n === Math.floor(n)) ? n : n.toFixed(1) : ''}`; }
 
@@ -42,7 +42,7 @@ export class AcqPlayer extends Player {
 
   /** TODO: stash tile on Player's panel, in empty hex. */
   drawTile() {
-    const rack = this.tileRack.find(hex => !hex.tile) as Hex;
+    const rack = this.tileRack.find(hex => !hex.tile) as Hex2;
     if (!rack) return;
     const tile = Tile.source.takeUnit();
     tile?.placeTile(rack);
@@ -51,7 +51,7 @@ export class AcqPlayer extends Player {
   }
 
 
-  readonly tileRack: Hex[] = [];
+  readonly tileRack: Hex2[] = [];
   /**
    * 6 tiles, $coins, Certs for up to 7 companies.
    *
@@ -80,7 +80,7 @@ export class AcqPlayer extends Player {
   }
 
   xyFromMap(row = 0, col = 0, panel = this.panel, map = this.gamePlay.hexMap) {
-    const xywh = Hex.xywh(undefined, undefined, row, col)
+    const xywh = Hex2.xywh(undefined, undefined, row, col)
     const xy = map.mapCont.hexCont.localToLocal(xywh.x, xywh.y, panel, xywh); // offset from hexCont to panel
     return xywh;
   }
@@ -91,10 +91,10 @@ export class AcqPlayer extends Player {
     const map = this.gamePlay.hexMap, row = .73, n = 6 - 1;
     const { x, y } = this.xyFromMap(0, 0); // offset from hexCont to panel
     const { wide } = panel.metrics
-    const { x: xn } = Hex.xywh(undefined, undefined, 0, n)
+    const { x: xn } = Hex2.xywh(undefined, undefined, 0, n)
     const dx = (wide - xn) / 2;
     for (let i = 0; i <= n; i++) {
-      const hex = new Hex(map, row, i, `${ndx}H${i}`) // not on map!
+      const hex = new Hex2(map, row, i, `${ndx}H${i}`) // not on map!
       this.tileRack.push(hex);
       hex.cont.x += (-x + dx);
       hex.cont.y += (-y + 0);

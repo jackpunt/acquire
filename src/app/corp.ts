@@ -2,6 +2,7 @@ import { AcqHex as Hex } from "./hex";
 import type { AcqPlayer } from "./acq-player";
 import type { AcqTile } from "./acq-tile";
 import { C } from "@thegraid/common-lib";
+import { TP } from "./table-params";
 
 /** expect GameSetup/GamePlay/Table to have a singleton CorpMgr */
 export class CorpMgr {
@@ -46,46 +47,62 @@ export class CorpMgr {
     return hex.linkHexes.filter(lh => !!lh?.tile) as Hex[];
   }
 
-  /** false if hex would join two or more safe Corps */
-  canAdd(hex: Hex) {
-    const corps = this.allCorps.filter(corp => corp.moats.has(hex));
-    const twoSafe = (corps.filter(corp => corp.isSafe).length >= 2);
-    const tooMany = (corps.length == 0) && this.inNewCorp(hex).length > 0 && this.soldOut;
-    return !(twoSafe || tooMany);
+  /** false if playing tile to hex would join two or more safe Corps or create too many Corps */
+  canAdd(toHex: Hex, tile?: AcqTile) {
+    const corps = this.allCorps.filter(corp => corp.moats.has(toHex)); // adjacent Corps
+    const twoSafe = toHex.twoSafe = (corps.filter(corp => corp.isSafe).length >= 2);
+    const tooMany = (corps.length == 0) && this.inNewCorp(toHex).length > 0 && this.soldOut;
+    const noPlay = (twoSafe || tooMany);
+    if (tile) {
+      tile.unplayable = noPlay; // potentially permenantly unplayable
+    }
+    return !noPlay
   }
 
+  // pre-existing Hex(es) in new Corp:
   makeCorp(inCorp: Hex[], plyr: AcqPlayer) {
     // Assert: canAdd(hex) verified !tooMany
     const avail = this.allCorps.filter(corp => corp.size == 0);
     const corp = plyr.chooseCorp(avail);
-    inCorp.forEach(hex => corp.add(hex));
+    inCorp.forEach(hex => corp.add(hex, false)); // update when add seed hex
     return corp;
   }
+  payout() {
+    // largest & second-largest holder(s) get [majority, minority] bonus
+    // if tied for second, split (round up to $100) the minority bonus
+    // Trade: 2-for-1 from in-active -> surviving Corp
+    // Sell: sell shares at pre-merger price
+    // Hold: retain stock in in-active Corp
+  }
+  mergeCorps(hex: Hex, plyr: AcqPlayer, corps: Corp[]) {
+    // TODO: payout to shareholders of subs!
+    corps.sort((a, b) => b.size - a.size); // descending
+    const size = corps[0].size;
+    const corpm = corps.filter(corp => corp.size === size); // all the biggest
+    const corp = (corpm.length > 1) ? plyr.chooseCorp(corpm) : corpm[0];
+    const subs = corps.filter(sub => sub !== corp); // subsidiaries
+    subs.forEach(sub => {
+      sub.hexes.forEach(hex => corp.add(hex)); // merge hex from acquired subs
+      sub.clear();         // return to pool of available Corps
+    })
+    this.inNewCorp(hex).forEach(hex => corp.add(hex)); // add adj Hex(es)
+    return corp
+  }
 
-  // adjust for newly added Hex on map:
+  /** adjust [ignore, make, expand, merge] for newly added Hex on map: */
   addHex(hex: Hex, plyr: AcqPlayer) {
     const corps = this.allCorps.filter(corp => corp.moats.has(hex));
     let corp: Corp;
     if (corps.length == 0) {
       const inCorp = this.inNewCorp(hex);
-      if (inCorp.length == 0) return;     // no effect on Corps!
-      corp = this.makeCorp(inCorp, plyr)  // show Corp on map
+      if (inCorp.length == 0) return;     // Ignore: no effect on Corps!
+      corp = this.makeCorp(inCorp, plyr)  // Make: show Corp on map
     } else if (corps.length == 1) {
-      corp = corps[0]
+      corp = corps[0];                    // Expand:
     } else {
-      corps.sort((a, b) => b.size - a.size); // descending
-      const size = corps[0].size;
-      const corpm = corps.filter(corp => corp.size === size); // all the biggest
-      corp = (corpm.length > 1) ? plyr.chooseCorp(corpm) : corpm[0];
-      const subs = corps.filter(sub => sub !== corp); // subsidiaries
-      subs.forEach(sub => {
-        sub.hexes.forEach(hex => corp.add(hex)); // absorb each hex from subs
-        sub.clear();         // return to pool of available Corps
-      })
-      // TODO: payout to shareholders of subs!
-      this.inNewCorp(hex).forEach(hex => corp.add(hex));
+      corp = this.mergeCorps(hex, plyr, corps);      // Merge: acquire other Corps
     }
-    corp?.add(hex);
+    corp?.add(hex);    // expand newly placed hex
     corp?.calcMoat();
     corp?.hexes.forEach(hex => {
       const tile = hex.tile as AcqTile;
@@ -100,8 +117,11 @@ export class Corp {
   readonly hexes: Set<Hex> = new Set<Hex>()
   readonly moats: Set<Hex> = new Set<Hex>()
 
-  constructor(public mgr: CorpMgr, public Aname: string, public rank: number, public color: string) {
-
+  constructor(
+    public mgr: CorpMgr,
+    public Aname: string,
+    public rank: number,
+    public color: string) {
   }
 
   get size() { return this.hexes.size }
@@ -157,12 +177,13 @@ export class Corp {
     this.hexes.clear();
     this.moats.clear();
   }
-  add(hex: Hex) {
+  /** Add hex to this Corp */
+  add(hex: Hex, update = true) {
     this.hexes.add(hex);
-    const tile = hex.tile as AcqTile;
-    tile?.setCorp(this);
-    tile?.showSize();
-    tile?.paint(this.color);
+    const tile = hex.tile as AcqTile; // assert hex.occupied
+    tile.setCorp(this);
+    tile.showSize();
+    tile.paint(this.color);
   }
   has(hex: Hex) {
     this.hexes.has(hex);

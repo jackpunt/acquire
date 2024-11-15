@@ -42,7 +42,7 @@ export class Table extends TableLib {
     this.initialVis = true;
     super.layoutTable2();
     const drawCol = TP.nHexes + Math.ceil(TP.nHexes / 2) + 1;
-    const drawHex = this.newHex2(1, drawCol, 'drawHex') as AcqHex2;
+    const drawHex = this.newHex2(1, drawCol, 'drawHex') as AcqHex2; // map.HexC === AcqHex2
     drawHex.distText.y = 0;
     // drawHex.cont.visible = false;
     permute(AcqTile.allTiles);
@@ -55,7 +55,7 @@ export class Table extends TableLib {
    * last action of curPlayer is to draw their next tile.
    */
   override addDoneButton() {
-    const rv = super.addDoneButton(undefined, 0, 50); // table.doneButton('Done')
+    const rv = super.addDoneButton(undefined, 250, 550); // table.doneButton('Done')
     this.doneClick0 = this.doneClicked;
     this.doneClicked = (ev) => {
       this.playerDone(ev);

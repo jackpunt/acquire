@@ -5,7 +5,7 @@ import { AcqPlayer as Player } from "./acq-player";
 import { stime } from "@thegraid/common-lib";
 import { AcqTile as Tile } from "./acq-tile";
 import { CorpMgr } from "./corp";
-import { AcqHex as Hex, HexMap, type AcqHex2 } from "./hex";
+import { CC, AcqHex as Hex, HexMap2 } from "./hex";
 import { Table } from "./table";
 import { TP } from "./table-params";
 
@@ -16,7 +16,7 @@ import { TP } from "./table-params";
  */
 export class GamePlay extends GamePlayLib {
   declare gameSetup: GameSetup;
-  declare readonly hexMap: HexMap;
+  declare readonly hexMap: HexMap2;
   declare table: Table;
   declare curPlayer: Player;
 
@@ -31,17 +31,20 @@ export class GamePlay extends GamePlayLib {
 
   corpMgr: CorpMgr = new CorpMgr();
 
-  override startTurn(): void {
+  markTilesInRack() {
     this.forEachPlayer(plyr => {
       plyr.tileRack.forEach(hex => {
-        hex.tile?.markCorp(this.corpMgr, this.hexMap.hexAry as AcqHex2[])
+        hex.tile?.markCorp(this.corpMgr, this.hexMap.hexAry)
       })
     })
+  }
+  override startTurn(): void {
+    this.markTilesInRack();
   }
 
   override doPlayerMove(hex: Hex, tile: Tile): void {
     // check for corp -> paint
-    hex.isOnMap && tile.corpCircle.paint(tile.transp);
+    hex.isOnMap && tile.corpCircle.paint(CC.transp);
     if (this.turnNumber > 0)
       this.corpMgr.addHex(hex, this.curPlayer);
   }
@@ -50,8 +53,19 @@ export class GamePlay extends GamePlayLib {
   playerDone() {
     const plyr = this.curPlayer;
     plyr.tileRack.forEach(hex => {
-      if (hex.tile?.corpCircle.colorn === 'pink') {
-        hex.tile.moveTo(undefined); // remove from game.
+      if (hex.tile?.unplayable) {
+        const tile = hex.tile;
+        const legal = this.hexMap.filterEachHex(hex => tile.isLegalTarget(hex))
+        const allSafe = !legal.find(hex => !hex.twoSafe);
+        if (allSafe) {
+          hex.tile.moveTo(undefined); // remove from game.
+          tile.parent.removeChild(tile);
+          console.log(stime(this, `.playerDone: ${hex} hex.tile=${hex.tile}`), hex.tile, tile)
+          const xt = tile, xh = tile.hex;
+          const k = xt;
+        } else {
+          tile.unplayable = false;  // temporary unplayable, waiting for newCorp
+        }
       }
     })
     while (plyr.tileRack.find(hex => !hex.tile) && plyr.drawTile()) {
@@ -70,11 +84,12 @@ export class GamePlay extends GamePlayLib {
     ; (document.getElementById('readFileName') as HTMLTextAreaElement).value = logAt;
   }
 
+  /** place on Hex per Player on board (as if selecting starting player) */
   setStartingTiles() {
     this.allPlayers.map(plyr => {
       const hexes = this.hexMap.hexAry;
       const tile = Tile.source.takeUnit()
-      const legalHex = hexes.find(hex => tile.isLegalTarget(hex as AcqHex2))
+      const legalHex = hexes.find(hex => tile.isLegalTarget(hex))
       tile.moveTo(legalHex);
     })
   }
