@@ -15,7 +15,7 @@ export class AcqTile extends Tile {
   // make a source for the given AcqTile[]
   static makeSource(hex: Hex2, tiles = AcqTile.allTiles) {
     const player = undefined as any as Player;
-    const source = AcqTile.makeSource0(TileSource<AcqTile>, AcqTile, player, hex, 0);
+    const source = AcqTile.makeSource0(TileSource<AcqTile>, AcqTile, hex, player, 0);
     tiles.forEach(unit => source.availUnit(unit));
     source.nextUnit();  // unit.moveTo(source.hex)
     return source;
