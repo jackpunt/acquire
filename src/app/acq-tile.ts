@@ -1,11 +1,12 @@
 import { C, F } from "@thegraid/common-lib";
-import { CenterText, CircleShape, type Paintable } from "@thegraid/easeljs-lib";
+import { CenterText, CircleShape, type PaintableShape } from "@thegraid/easeljs-lib";
 import { HexShape, Tile, TileSource, type DragContext, type IHex2, type Table } from "@thegraid/hexlib";
 import { AcqPlayer as Player, type AcqPlayer } from "./acq-player";
 import type { Corp, CorpMgr } from "./corp";
 import type { GamePlay } from "./game-play";
-import { CC, AcqHex2 as Hex2, type HexMap2 } from "./hex";
+import { AcqHex2 as Hex2, type HexMap2 } from "./hex";
 import { TP } from "./table-params";
+
 export class AcqTile extends Tile {
   declare static allTiles: AcqTile[];
 
@@ -23,7 +24,7 @@ export class AcqTile extends Tile {
   declare fromHex: Hex2
   declare gamePlay: GamePlay;
 
-  constructor(Aname: string, map: HexMap2) {
+  constructor(Aname: string, map: HexMap2, public targets = map.hexAry.filter(hex => Aname === hex.distText.text)) {
     super(Aname, undefined);
     this.hexes = map.hexAry.filter(hex => Aname === hex.distText.text)
     this.corpCircle.y = this.radius / 2;
@@ -34,8 +35,9 @@ export class AcqTile extends Tile {
   }
 
   readonly hexes: Hex2[];
+  /** unplayable on this turn. */
   unplayable = false;
-  corpCircle = new CircleShape(CC.transp, this.radius * .22, '');
+  corpCircle = new CircleShape(C.transparent, this.radius * .22, '');
   sizeText = new CenterText('', TP.hexRad * .2, 'WHITE');
   corp?: Corp;
   setCorp(corp: Corp) {
@@ -49,7 +51,7 @@ export class AcqTile extends Tile {
     }
   }
 
-  override makeShape(): Paintable {
+  override makeShape(): PaintableShape {
     return new HexShape()
   }
 
@@ -73,6 +75,17 @@ export class AcqTile extends Tile {
     return onRack && [rack.indexOf(this.fromHex), toHex ? rack.indexOf(toHex) : 0];
   }
 
+  markTileOnBoard() {
+    // new, expand, join, unplayable, 'multi' (two differently named Tiles can occupy!?)
+    this.targets.forEach(hex => {
+    })
+  }
+  clearTileOnBoard() {
+    this.targets.forEach(hex => {
+      hex.paint(); // reset to origColor
+    })
+  }
+
   override markLegal(table: Table, setLegal = (hex: IHex2) => { hex.isLegal = false; }, ctx: DragContext = table.dragContext) {
     const allPlayers = Player.allPlayers;
     allPlayers.forEach(plyr => plyr.tileRack.forEach(setLegal))
@@ -82,7 +95,7 @@ export class AcqTile extends Tile {
   // todo: check for joining 2 'safe' Corps.
   // mark unplayable hex and potential unplayabe tile
   override isLegalTarget(toHex: Hex2, ctx?: DragContext | { tile?: AcqTile }): boolean {
-    const toMap = (this.Aname === toHex.distText.text);
+    const toMap = this.targets.includes(toHex);
     const xMap = toMap && ((this.hex?.isOnMap && (ctx as DragContext)?.lastShift) ?? false); // allow reposition
     const canAdd = toMap && (!toHex.tile) && this.gamePlay.corpMgr.canAdd(toHex, ctx?.tile as AcqTile, );
     const onRack = !!this.onRack(toHex);
@@ -93,16 +106,17 @@ export class AcqTile extends Tile {
   }
 
   markCorp(mgr: CorpMgr, hexAry: Hex2[]) {
-    let color = CC.transp, white = C.WHITE;
+    let color = C.transparent, white = C.WHITE;
     const hexes = hexAry.filter(toHex => this.isLegalTarget(toHex, { tile: this }))
-    if (hexes.length == 0) color = 'pink';
+    if (hexes.length == 0) color = 'pink'; // unplayable
     const corps = mgr.allCorps.filter(corp => hexes.find(hex => corp.moats.has(hex)))
     if (corps.length > 1) {
-      color = white;
+      color = white;      // join
+    } else if (corps.length == 1) {
+      color = corps[0].color; // extend
     } else {
-      if (corps.length == 1) color = corps[0].color;
-      const inNew = hexes.find(hex => mgr.inNewCorp(hex).length > 0 && !corps.find(corp => corp.moats.has(hex)));
-      if (inNew) color = white;
+      const inNew = hexes.find(hex => mgr.inNewCorp(hex).length > 0);
+      if (inNew) color = white; // new
     }
     this.corpCircle.paint(color);
     return color;

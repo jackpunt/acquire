@@ -1,10 +1,10 @@
 import { Params } from "@angular/router";
-import { Random, stime } from "@thegraid/common-lib";
+import { C, Random, stime } from "@thegraid/common-lib";
 import { ParamGUI } from "@thegraid/easeljs-lib";
 import { GameSetup as GameSetupLib, Scenario, ScenarioParser } from "@thegraid/hexlib";
 import { AcqPlayer as Player } from "./acq-player";
 import { GamePlay } from "./game-play";
-import { CC, AcqHex2 as Hex2, HexMap2 } from "./hex";
+import { AcqHex2 as Hex2, HexMap2 } from "./hex";
 // import { ScenarioParser } from "./scenario-parser";
 import { Table } from "./table";
 import { TP } from "./table-params";
@@ -58,7 +58,7 @@ export class GameSetup extends GameSetupLib {
 
   /** override to inject each Player.pathCont */
   override makeHexMap() {
-    HexMap2.distColor[0] = CC.grey92;
+    HexMap2.distColor[0] = C.grey92;
     return super.makeHexMap(HexMap2, Hex2);
   }
 

@@ -2,10 +2,10 @@ import { KeyBinder } from "@thegraid/easeljs-lib";
 import { GamePlay as GamePlayLib, GameSetup, GameState, Player as PlayerLib, type Scenario } from "@thegraid/hexlib";
 import { AcqPlayer as Player } from "./acq-player";
 // import { GameState } from "./game-state";
-import { stime } from "@thegraid/common-lib";
+import { C, stime } from "@thegraid/common-lib";
 import { AcqTile as Tile } from "./acq-tile";
 import { CorpMgr } from "./corp";
-import { CC, AcqHex as Hex, HexMap2 } from "./hex";
+import { AcqHex as Hex, HexMap2 } from "./hex";
 import { Table } from "./table";
 import { TP } from "./table-params";
 
@@ -44,7 +44,7 @@ export class GamePlay extends GamePlayLib {
 
   override doPlayerMove(hex: Hex, tile: Tile): void {
     // check for corp -> paint
-    hex.isOnMap && tile.corpCircle.paint(CC.transp);
+    hex.isOnMap && tile.corpCircle.paint(C.transparent);
     if (this.turnNumber > 0)
       this.corpMgr.addHex(hex, this.curPlayer);
   }
@@ -53,16 +53,13 @@ export class GamePlay extends GamePlayLib {
   playerDone() {
     const plyr = this.curPlayer;
     plyr.tileRack.forEach(hex => {
-      if (hex.tile?.unplayable) {
-        const tile = hex.tile;
-        const legal = this.hexMap.filterEachHex(hex => tile.isLegalTarget(hex))
-        const allSafe = !legal.find(hex => !hex.twoSafe);
+      const tile = hex.tile;
+      tile?.clearTileOnBoard();
+      if (tile?.unplayable) {
+        const allSafe = !tile.targets.find(hex => !hex.twoSafe); // all placements are twoSafe
         if (allSafe) {
-          hex.tile.moveTo(undefined); // remove from game.
-          tile.parent.removeChild(tile);
-          console.log(stime(this, `.playerDone: ${hex} hex.tile=${hex.tile}`), hex.tile, tile)
-          const xt = tile, xh = tile.hex;
-          const k = xt;
+          tile.source = tile.homeHex = undefined;
+          tile.sendHome();          // remove from game.
         } else {
           tile.unplayable = false;  // temporary unplayable, waiting for newCorp
         }

@@ -1,15 +1,8 @@
 import { H, Hex1 as Hex1Lib, Hex2 as Hex2Lib, Hex2Mixin, HexDir, Hex as HexLib, HexM, HexMap as HexMapLib, HexM as HexMLib } from "@thegraid/hexlib";
 import { AcqTile } from "./acq-tile";
 import { TP } from "./table-params";
+import { C } from "@thegraid/common-lib";
 
-export namespace CC {
-  export const transp:      string = 'rgba(0,0,0,0)'
-  export const grey128:     string = 'rgb(128,128,128)'
-  export const grey64:      string = 'rgb(64,64,64)'
-  export const grey32:      string = 'rgb(32,32,32)'
-  export const grey92:      string = 'rgb(92,92,92)'
-  export const grey224:     string = 'rgb(224,224,224)'
-}
 /** Base Hex, has no connection to graphics.
  *
  */
@@ -34,6 +27,12 @@ export class AcqHex2 extends AcqHex2Lib {
     // Hex2Impl.consCode() == override AcqHex2.consCode() { super.consCode() == Hex2Imp.consCode(); ... }
     super(map, row, col, name);
   }
+
+  origColor = HexMap2.greyC;
+  paint(color = this.origColor) {
+    this.hexShape.paint(color = this.origColor);
+  }
+
   override showText(vis = !this.rcText.visible) {
     this.rcText.visible = vis;
     this.cont.updateCache();
@@ -75,24 +74,26 @@ export class AcqHex2 extends AcqHex2Lib {
 }
 
 export class HexMap2 extends HexMapLib<AcqHex2> implements HexM<HexLib> {
+  static greyC = 'rgb(110,110,110)';
+  static grey0 = C.grey128;
+  static grey1 = C.grey92;
 
   labelHexesAndMakeTiles() {
     const sectors = ['C', 'D', 'E', 'F', 'G', 'B', ]; // name each sector
     const ch = this.centerHex;
     const cw = (radial: number) => sectors[radial]; // clockwise(NE)=>N
-    const setText = (hex: AcqHex2, text: string, n = 0) => {
+    const setText = (hex: AcqHex2, text: string, n = -1) => {
       hex.distText.y = 0
       hex.distText.text = text;
       hex.distText.color = 'WHITE';
-      hex.hexShape.paint([CC.grey128, CC.grey92][n % 2])
+      hex.origColor = [HexMap2.greyC, HexMap2.grey0, HexMap2.grey1][n + 1];
+      hex.paint(hex.origColor);
       hex.showText(true);
       new AcqTile(text, this);    // make AcqTile to match each Hex
     }
 
     AcqTile.allTiles.length = 0;
     setText(ch, 'A-00');
-    ch.hexShape.paint('rgb(110,110,110)')
-    // ch.hexShape.paint(CC.grey32)
 
     // [NE, E, SE, SW, W, NW]
     const dirs = TP.useEwTopo ? H.ewDirs : H.nsDirs;
@@ -102,11 +103,11 @@ export class HexMap2 extends HexMapLib<AcqHex2> implements HexM<HexLib> {
       // For each of the hex0 on the 6 central axies:
       ch.hexesInDir(dir).forEach((hex0, dr) => {
         let label = `${sn}-${dr + 1}${0}`; // dr is the 'ring' number
-        setText(hex0, label, n);
+        setText(hex0, label, n % 2);
         // extend across the triangle
         hex0.hexesInDir(d2).slice(0, dr).forEach((hex, i) => {
           if (!TP.multi) label = `${sn}-${dr + 1}${i+1}`;
-          setText(hex, label, n);
+          setText(hex, label, n % 2);
         })
       })
     })
